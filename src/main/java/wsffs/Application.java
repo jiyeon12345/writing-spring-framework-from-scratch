@@ -15,13 +15,13 @@ public class Application {
 
         annotationConfigServletWebServerApplicationContext.refresh();
 
-        final Server server = new Server(8080);
+        /*final Server server = new Server(8080);
         final ServletContextHandler contextHandler = new ServletContextHandler();
         final DispatcherServlet dispatcherServlet = new DispatcherServlet();
         final ServletHolder dispatcherServletHolder = new ServletHolder(dispatcherServlet);
         contextHandler.setContextPath("/");
         contextHandler.addServlet(dispatcherServletHolder, "/*");
         server.setHandler(contextHandler);
-        server.start();
+        server.start();*/
     }
 }
