@@ -12,7 +12,6 @@ public class Application {
                 new AnnotationConfigServletWebServerApplicationContext(
                         Application.class.getPackageName()
                 );
-
         annotationConfigServletWebServerApplicationContext.refresh();
 
         /*final Server server = new Server(8080);

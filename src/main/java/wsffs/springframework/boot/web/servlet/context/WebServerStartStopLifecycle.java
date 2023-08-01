@@ -5,23 +5,25 @@ import wsffs.springframework.context.Lifecycle;
 
 public class WebServerStartStopLifecycle implements Lifecycle {
 
-    private boolean isRunning = false;
+    private final AnnotationConfigServletWebServerApplicationContext applicationContext;
     private final WebServer webServer;
+    private boolean isRunning = false;
 
-    public WebServerStartStopLifecycle(WebServer webServer) {
+    public WebServerStartStopLifecycle(AnnotationConfigServletWebServerApplicationContext applicationContext, WebServer webServer) {
+        this.applicationContext = applicationContext;
         this.webServer = webServer;
     }
 
     @Override
     public void start() {
-        webServer.start();
         isRunning = true;
+        webServer.start();
     }
 
     @Override
     public void stop() {
-        webServer.stop();
         isRunning = false;
+        webServer.stop();
     }
 
     @Override

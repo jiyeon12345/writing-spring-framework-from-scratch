@@ -7,7 +7,8 @@ import wsffs.springframework.beans.factory.config.SingletonBeanRegistry;
 import wsffs.springframework.beans.factory.support.BeanDefinitionRegistry;
 import wsffs.springframework.beans.factory.support.BeanNameGenerator;
 import wsffs.springframework.beans.factory.support.DefaultBeanNameGenerator;
-import wsffs.springframework.boot.web.server.JettyEmbeddedWebServer;
+import wsffs.springframework.boot.web.embedded.JettyServletWebServerFactory;
+import wsffs.springframework.boot.web.server.ServletWebServerFactory;
 import wsffs.springframework.boot.web.server.WebServer;
 import wsffs.springframework.context.ApplicationContext;
 import wsffs.springframework.context.Lifecycle;
@@ -65,34 +66,41 @@ public class AnnotationConfigServletWebServerApplicationContext
      */
     public void refresh() throws BeansException {
         scanner.scan(basePackages);
-        initializeBeans();  // bean 생성 & 등록 - 초기화
-        onRefresh();        // 웹 서버 생성
-        finishRefresh();    // lifecycle bean 시작 (웹 서버 시작)
+        initializeBeans();
+        onRefresh();
+        finishRefresh();
+    }
+
+    private void finishRefresh() {
+        startLifeCycleBeans();
+    }
+
+    private void startLifeCycleBeans() {
+        for (Object bean : beanMap.values()) {
+            if (bean instanceof Lifecycle lifecycle) {
+                lifecycle.start();
+            }
+        }
     }
 
     private void onRefresh() {
-        // 여기서 서버 생성
         createWebServer();
     }
 
     private void createWebServer() {
-        // 1. 웹서버를 생성
-        this.webServer = new JettyEmbeddedWebServer(8080);
-        // 2. WebServerStartStopLifecycle 라이프사이클 생성
-        final Lifecycle webServerStartStopLifecycle = new WebServerStartStopLifecycle(webServer);
-        // 3. registerSingleton로 라이프사이클 등록
-        registerSingleton(
-                "webServerStartStopLifecycle",
-                webServerStartStopLifecycle
-        );
+        final WebServer webServer = this.webServer;
+        if (webServer == null) {
+            final ServletWebServerFactory factory = getWebServerFactory();
+            this.webServer = factory.getWebServer();
+            registerSingleton(
+                    "webServerStartStop",
+                    new WebServerStartStopLifecycle(this, this.webServer)
+            );
+        }
     }
 
-    private void finishRefresh() {
-        for (Object bean : beanMap.values()) {
-            if (bean instanceof Lifecycle lifecycleBean) {
-                lifecycleBean.start();
-            }
-        }
+    private ServletWebServerFactory getWebServerFactory() {
+        return new JettyServletWebServerFactory(this);
     }
 
     private void initializeBeans() {

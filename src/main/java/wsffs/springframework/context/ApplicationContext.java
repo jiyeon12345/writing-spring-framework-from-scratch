@@ -1,6 +1,6 @@
 package wsffs.springframework.context;
 
-import wsffs.springframework.beans.factory.BeanFactory;
+import wsffs.springframework.beans.factory.config.ConfigurableBeanFactory;
 
-public interface ApplicationContext extends BeanFactory {
+public interface ApplicationContext extends ConfigurableBeanFactory {
 }
