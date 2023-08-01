@@ -18,6 +18,7 @@ class AnnotationConfigServletWebServerApplicationContextTest {
         final String basePackage = TestApplication.class.getPackageName();
         final AnnotationConfigServletWebServerApplicationContext sut =
                 new AnnotationConfigServletWebServerApplicationContext(basePackage);
+        sut.refresh();
 
         // when
         final TestController testController = sut.getBean("testController", TestController.class);

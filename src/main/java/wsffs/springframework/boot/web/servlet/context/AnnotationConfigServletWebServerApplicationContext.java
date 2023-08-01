@@ -3,10 +3,15 @@ package wsffs.springframework.boot.web.servlet.context;
 import wsffs.springframework.beans.BeanUtils;
 import wsffs.springframework.beans.BeansException;
 import wsffs.springframework.beans.factory.config.BeanDefinition;
+import wsffs.springframework.beans.factory.config.SingletonBeanRegistry;
 import wsffs.springframework.beans.factory.support.BeanDefinitionRegistry;
 import wsffs.springframework.beans.factory.support.BeanNameGenerator;
 import wsffs.springframework.beans.factory.support.DefaultBeanNameGenerator;
+import wsffs.springframework.boot.web.embedded.JettyServletWebServerFactory;
+import wsffs.springframework.boot.web.server.ServletWebServerFactory;
+import wsffs.springframework.boot.web.server.WebServer;
 import wsffs.springframework.context.ApplicationContext;
+import wsffs.springframework.context.Lifecycle;
 import wsffs.springframework.context.annotation.AnnotationConfigRegistry;
 import wsffs.springframework.context.annotation.ClassPathBeanDefinitionScanner;
 
@@ -17,7 +22,10 @@ import java.util.List;
 import java.util.Map;
 
 public class AnnotationConfigServletWebServerApplicationContext
-        implements ApplicationContext, AnnotationConfigRegistry, BeanDefinitionRegistry {
+        implements ApplicationContext,
+        AnnotationConfigRegistry,
+        BeanDefinitionRegistry,
+        SingletonBeanRegistry {
 
     private final ClassPathBeanDefinitionScanner scanner;
 
@@ -27,6 +35,7 @@ public class AnnotationConfigServletWebServerApplicationContext
     private final Map<String, Object> beanMap = new HashMap<>();
 
     private final BeanNameGenerator beanNameGenerator = DefaultBeanNameGenerator.INSTANCE;
+    private WebServer webServer;
 
     private AnnotationConfigServletWebServerApplicationContext() {
         this.scanner = new ClassPathBeanDefinitionScanner(this);
@@ -35,7 +44,6 @@ public class AnnotationConfigServletWebServerApplicationContext
     public AnnotationConfigServletWebServerApplicationContext(String... basePackages) {
         this();
         scan(basePackages);
-        refresh();
     }
 
     /**
@@ -59,6 +67,40 @@ public class AnnotationConfigServletWebServerApplicationContext
     public void refresh() throws BeansException {
         scanner.scan(basePackages);
         initializeBeans();
+        onRefresh();
+        finishRefresh();
+    }
+
+    private void finishRefresh() {
+        startLifeCycleBeans();
+    }
+
+    private void startLifeCycleBeans() {
+        for (Object bean : beanMap.values()) {
+            if (bean instanceof Lifecycle lifecycle) {
+                lifecycle.start();
+            }
+        }
+    }
+
+    private void onRefresh() {
+        createWebServer();
+    }
+
+    private void createWebServer() {
+        final WebServer webServer = this.webServer;
+        if (webServer == null) {
+            final ServletWebServerFactory factory = getWebServerFactory();
+            this.webServer = factory.getWebServer();
+            registerSingleton(
+                    "webServerStartStop",
+                    new WebServerStartStopLifecycle(this, this.webServer)
+            );
+        }
+    }
+
+    private ServletWebServerFactory getWebServerFactory() {
+        return new JettyServletWebServerFactory(this);
     }
 
     private void initializeBeans() {
@@ -120,5 +162,10 @@ public class AnnotationConfigServletWebServerApplicationContext
     @Override
     public boolean containsBeanDefinition(String beanName) {
         return false;
+    }
+
+    @Override
+    public void registerSingleton(String beanName, Object singletonObject) {
+        beanMap.put(beanName, singletonObject);
     }
 }
