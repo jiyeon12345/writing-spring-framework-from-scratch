@@ -3,8 +3,8 @@ package wsffs.springframework.boot.web.server;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import wsffs.springframework.boot.web.servlet.DispatcherServlet;
 import wsffs.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext;
+import wsffs.springframework.web.servlet.DispatcherServlet;
 
 public class JettyEmbeddedWebServer implements WebServer {
 
@@ -19,7 +19,8 @@ public class JettyEmbeddedWebServer implements WebServer {
         this.applicationContext = applicationContext;
         final ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
-        final DispatcherServlet dispatcherServlet = new DispatcherServlet();
+        final DispatcherServlet dispatcherServlet = applicationContext
+                .getBean("dispatcherServlet", DispatcherServlet.class);
         final ServletHolder dispatcherServletHolder = new ServletHolder(dispatcherServlet);
         context.addServlet(dispatcherServletHolder, "/*");
         server.setHandler(context);
